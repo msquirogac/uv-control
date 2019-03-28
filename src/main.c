@@ -60,6 +60,7 @@ typedef struct
 } param_t;
 
 uint8_t display[2][18];
+#define fill "                "
 
 void core_task(void *param)
 {
@@ -72,16 +73,12 @@ void core_task(void *param)
     uint8_t bflag = bt & 0x01;
     uint8_t eflag = enc & 0x01;
     uint8_t edir = enc & 0x02;
-
-    size_t size[2];
-    memset(display[0], 0x20, 16);
-    memset(display[1], 0x20, 16);
     switch (state)
     {
     case STATE0:
     {
-        size[0] = snprintf((char*) display[0], 16, ">Run");
-        size[1] = snprintf((char*) display[1], 16, " Set time");
+        snprintf((char*) display[0], 17, ">Run%s", fill);
+        snprintf((char*) display[1], 17, " Set time%s", fill);
         if (bflag)
         {
             msg->flag = 1;
@@ -99,8 +96,8 @@ void core_task(void *param)
     }
     case STATE0A:
     {
-        size[0] = snprintf((char*) display[0], 16, " ");
-        size[1] = snprintf((char*) display[1], 16, "Time left: %d", msg->rtime);
+        snprintf((char*) display[0], 17, "Left: %5d seg%s", msg->rtime, fill);
+        snprintf((char*) display[1], 17, "Set:  %5d seg%s", tseg, fill);
         if (bflag)
         {
             msg->flag = 0;
@@ -111,8 +108,8 @@ void core_task(void *param)
     }
     case STATE1:
     {
-        size[0] = snprintf((char*) display[0], 16, " Run");
-        size[1] = snprintf((char*) display[1], 16, ">Set time");
+        snprintf((char*) display[0], 17, " Run%s", fill);
+        snprintf((char*) display[1], 17, ">Set time%s", fill);
         if (bflag)
         {
             state = STATE1A;
@@ -128,8 +125,8 @@ void core_task(void *param)
     }
     case STATE1A:
     {
-        size[0] = snprintf((char*) display[0], 16, " ");
-        size[1] = snprintf((char*) display[1], 16, "Time: %d", tseg);
+        snprintf((char*) display[0], 17, "%s", fill);
+        snprintf((char*) display[1], 17, "Set:  %5d seg%s", tseg, fill);;
         if (bflag)
         {
             state = STATE1;
@@ -146,8 +143,6 @@ void core_task(void *param)
         break;
     }
     }
-    display[0][size[0]] = 0x20;
-    display[1][size[1]] = 0x20;
 }
 
 void ctrl_task(void *param)
@@ -211,9 +206,9 @@ int main(void)
 
     uint8_t msg;
     taskSetup(&task0, core_task, 20, &msg);
-    taskSetup(&task1, lcd_task, 250, NULL);
-    taskSetup(&task2, print_task, 100, NULL);
-    taskSetup(&task3, ctrl_task, 100, &msg);
+    taskSetup(&task1, ctrl_task, 100, &msg);
+    taskSetup(&task2, lcd_task, 250, NULL);
+    taskSetup(&task3, print_task, 100, NULL);
     taskStart(&task0);
     taskStart(&task1);
     taskStart(&task2);
